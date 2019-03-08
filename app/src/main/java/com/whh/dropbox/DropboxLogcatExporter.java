@@ -3,6 +3,7 @@ package com.whh.dropbox;
 import android.content.Context;
 import android.os.DropBoxManager;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -15,6 +16,8 @@ import java.io.IOException;
 public class DropboxLogcatExporter {
 
     private volatile static DropboxLogcatExporter sInstance;
+
+    private static final String TAG = DropboxLogcatExporter.class.getSimpleName();
 
     private DropboxLogcatExporter() {
     }
@@ -38,6 +41,7 @@ public class DropboxLogcatExporter {
      * @return the absolute path of dropbox-logcat-file
      */
     public String output(@NonNull Context context, String pathname, int maxBytes) {
+        //1、get dropbox manager
         DropBoxManager dropBoxManager = (DropBoxManager) context.getApplicationContext().getSystemService(Context.DROPBOX_SERVICE);
         if (dropBoxManager == null) {
             return null;
@@ -53,23 +57,27 @@ public class DropboxLogcatExporter {
         file.getParentFile().mkdirs();
         try {
             if (!file.createNewFile()) {
+                Log.e(TAG, "create file " + file.getAbsolutePath() + " failed");
                 return null;
             }
-            Runtime.getRuntime().exec("chmod 777 " + file.getAbsolutePath());
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
             return null;
         }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file.getAbsolutePath(), true))){
             long startTime = 0L;
             DropBoxManager.Entry entry = null;
+            //2、get entry by startTime
             while ((entry = dropBoxManager.getNextEntry(null, startTime)) != null) {
+                //3、write the tag info and entry info into file
                 writer.write(entry.getTag() + ":\r\n" + entry.getText(maxBytes) + "\r\n\r\n");
+                //4、reset startTime for the next entry
                 startTime = entry.getTimeMillis();
+                //5、donnot forget to close the entry after you finished your task
                 entry.close();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
         }
         return file.getAbsolutePath();
     }
