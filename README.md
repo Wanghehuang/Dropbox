@@ -4,3 +4,6 @@
 ```
 DropboxLogcatExporter.getInstance().output(context, outputPath, bufferMaxBytes);
 ```
+
+## Dropbox解析链接
+[Android导出dropbox日志](https://www.jianshu.com/p/db6e949c2af2)
